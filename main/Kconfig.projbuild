@@ -1,0 +1,69 @@
+menu "Sample: BLE keyboard + TLS tunnel"
+
+    config APP_DEVICE_NAME
+        string "BLE device name"
+        default "TLS over BLE"
+        help
+            Keep it at 18 characters or less so that it fits in the advertising packet.
+
+    config APP_BUTTON_GPIO
+        int "Button GPIO (active low)"
+        default 41
+        help
+            AtomS3 Lite: GPIO41.
+
+    config APP_TLS_DEMO
+        bool "Run one HTTPS GET through the tunnel when the relay app connects"
+        default y
+
+    config APP_TLS_DEMO_HOST
+        string "HTTPS demo host"
+        depends on APP_TLS_DEMO
+        default "example.com"
+
+    config APP_TLS_DEMO_PORT
+        int "HTTPS demo port"
+        depends on APP_TLS_DEMO
+        default 443
+
+    config APP_TLS_DEMO_PATH
+        string "HTTPS demo path"
+        depends on APP_TLS_DEMO
+        default "/"
+
+    config APP_TLS_DEMO_RAW
+        bool "Write the HTTP request directly with ble_tls (no esp_http_client)"
+        depends on APP_TLS_DEMO
+        default n
+        help
+            Off: the demo uses esp_http_client over the ble_tls esp_transport adapter.
+            On: the older demo that writes the HTTP/1.1 request by hand.
+
+    config APP_OTA_DEMO
+        bool "Check for a firmware update through the tunnel when the relay app connects"
+        default y
+        help
+            Downloads the image header from APP_OTA_URL with esp_https_ota over the
+            tunnel. If its version differs from the running one, downloads the whole
+            image, switches the boot partition and restarts.
+
+    config APP_OTA_URL
+        string "Firmware image URL"
+        depends on APP_OTA_DEMO
+        default "https://localhost:8443/firmware.bin"
+        help
+            The host and port must be on the central's allowlist
+            (e.g. --allow localhost:8443 for tools/ota_server/ota_server.py).
+
+    choice APP_OTA_CA
+        prompt "Trusted CA for the update server"
+        depends on APP_OTA_DEMO
+        default APP_OTA_CA_EMBEDDED
+
+        config APP_OTA_CA_EMBEDDED
+            bool "Embedded main/ota_ca.pem (created by tools/ota_server/ota_server.py init)"
+        config APP_OTA_CA_BUNDLE
+            bool "ESP x509 certificate bundle (server with a public CA)"
+    endchoice
+
+endmenu
